@@ -1,7 +1,13 @@
 using System.Data;
+using api.Models.Validators;
+using api.Utils;
+using Controllers;
+using Dapper;
 using Db;
+using FluentValidation;
 using Microsoft.Data.Sqlite;
 using Repositories;
+using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +18,7 @@ var builder = WebApplication.CreateBuilder(args);
         builder.Configuration.GetConnectionString("ReservationsDb")
         ?? "Data Source=reservations.db;Cache=Shared";
 
+    SqlMapper.AddTypeHandler(new GuidTypeHandler());
     Services.AddSingleton(_ => new SqliteConnection(connectionString));
     Services.AddSingleton<IDbConnection>(sp => sp.GetRequiredService<SqliteConnection>());
     Services.AddSingleton<GuestRepository>();
@@ -21,6 +28,10 @@ var builder = WebApplication.CreateBuilder(args);
     {
         opt.EnableEndpointRouting = false;
     });
+    Services
+        .AddFluentValidationAutoValidation()
+        .AddValidatorsFromAssemblyContaining<ReservationValidator>();
+
     Services.AddCors();
     Services.AddEndpointsApiExplorer();
     Services.AddSwaggerGen();
@@ -43,8 +54,8 @@ var app = builder.Build();
     }
 
     app.UsePathBase("/api")
-        .UseMvc()
         .UseCors(p => p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader())
+        .UseMvc()
         .UseSwagger()
         .UseSwaggerUI();
 }
