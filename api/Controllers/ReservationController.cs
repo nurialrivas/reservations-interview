@@ -37,6 +37,14 @@ namespace Controllers
             }
         }
 
+        [HttpGet, Produces("application/json"), Route("room/{roomNumber}")]
+        public async Task<ActionResult<Reservation>> GetRoomReservations(string roomNumber)
+        {
+            var reservations = await _repo.GetRoomReservations(roomNumber);
+
+            return Json(reservations);
+        }
+
         /// <summary>
         /// Create a new reservation, to generate the GUID ID on the server, send an Empty GUID (all 0s)
         /// </summary>
@@ -55,6 +63,10 @@ namespace Controllers
 
             try
             {
+                var existingReservations = await _repo.GetRoomReservations(newBooking.RoomNumber);
+                if(existingReservations.Any(r => newBooking.Start >= r.Start && newBooking.Start < r.End || newBooking.End > r.Start && newBooking.End <= r.End))
+                    return BadRequest("The room is already booked for the provided time range");
+
                 var createdReservation = await _repo.CreateReservation(newBooking);
                 return Created($"/reservation/${createdReservation.Id}", createdReservation);
             }

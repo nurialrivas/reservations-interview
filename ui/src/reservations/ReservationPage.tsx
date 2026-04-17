@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useShowSuccessToast, useShowErrorToast } from "../utils/toasts";
 import { Grid, Heading, Section, Dialog } from "@radix-ui/themes";
 import { ReservationCard } from "./ReservationCard";
-import { bookRoom, BookingError, NewReservation, useGetRooms } from "./api";
+import { bookRoom, BookingError, NewReservation, useGetRoomReservations, useGetRooms } from "./api";
 import { LoadingCard } from "../components/LoadingCard";
 import { BookingDetailsModal } from "./BookingDetailsModal";
 
@@ -15,6 +15,7 @@ const RESPONSIVE_GRID_COLS: React.ComponentProps<typeof Grid>["columns"] = {
 export function ReservationPage() {
   const { isLoading, data: rooms } = useGetRooms();
   const [selectedRoomNumber, setSelectedRoomNumber] = useState("");
+  const { data: selectedRoomReservations } = useGetRoomReservations(selectedRoomNumber);
 
   const formattedRoomNumber = String(selectedRoomNumber).padStart(3, "0");
 
@@ -63,6 +64,7 @@ export function ReservationPage() {
 
           <BookingDetailsModal
             roomNumber={formattedRoomNumber}
+            reservations={selectedRoomReservations}
             onSubmit={onSubmit}
           />
         </Dialog.Root>

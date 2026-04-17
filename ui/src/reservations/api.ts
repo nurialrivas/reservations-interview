@@ -12,14 +12,14 @@ export interface NewReservation {
 
 /** The schema the API returns */
 const ReservationSchema = z.object({
-  Id: z.string(),
-  RoomNumber: z.string(),
-  GuestEmail: z.string().email(),
-  Start: z.string(),
-  End: z.string(),
+  id: z.string(),
+  roomNumber: z.string(),
+  guestEmail: z.string().email(),
+  start: z.string(),
+  end: z.string(),
 });
 
-type Reservation = z.infer<typeof ReservationSchema>;
+export type Reservation = z.infer<typeof ReservationSchema>;
 
 export class BookingError extends Error {
   constructor(public readonly messages: string[]) {
@@ -63,5 +63,19 @@ export function useGetRooms() {
   return useQuery({
     queryKey: ["rooms"],
     queryFn: () => ky.get("api/room").json().then(RoomListSchema.parseAsync),
+  });
+}
+
+const ReservationListSchema = ReservationSchema.array();
+
+export function useGetRoomReservations(roomNumber: string) {
+  return useQuery({
+    queryKey: ["reservations", roomNumber],
+    queryFn: async () => {
+      const raw = await ky.get(`api/reservation/room/${roomNumber}`).json<unknown>();
+      const list = Array.isArray(raw) ? raw : Object.values(raw as object);
+      return ReservationListSchema.parseAsync(list);
+    },
+    enabled: !!roomNumber,
   });
 }
