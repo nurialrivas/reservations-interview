@@ -21,5 +21,22 @@ namespace Controllers
 
             return Json(guests);
         }
+
+        [HttpPost, Produces("application/json"), Route("")]
+        public async Task<ActionResult<Guest>> AddGuest([FromBody] Guest guest)
+        {
+            try
+            {
+                var registeredGuest = await _repo.CreateGuest(guest);
+                return Created($"/guest/{guest.Email}", registeredGuest);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("An error occured when trying to register a new guest:");
+                Console.WriteLine(ex.ToString());
+
+                return BadRequest("Invalid guest data");
+            }
+        }   
     }
 }

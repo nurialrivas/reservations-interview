@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { ISO8601String, toIsoStr } from "../utils/datetime";
-import ky from "ky";
+import ky, { HTTPError } from "ky";
 import { z } from "zod";
 
 export interface NewReservation {
@@ -21,7 +21,13 @@ const ReservationSchema = z.object({
 
 type Reservation = z.infer<typeof ReservationSchema>;
 
-export function bookRoom(booking: NewReservation) {
+export class BookingError extends Error {
+  constructor(public readonly messages: string[]) {
+    super(messages.join(", "));
+  }
+}
+
+export async function bookRoom(booking: NewReservation): Promise<Reservation> {
   // unwrap branded types
   const newReservation = {
     ...booking,
@@ -29,8 +35,21 @@ export function bookRoom(booking: NewReservation) {
     End: toIsoStr(booking.End),
   };
 
-  // TODO post some json with ky.post()
-  return Promise.resolve<Reservation>(newReservation as any as Reservation);
+  try {
+    return await ky.post("api/reservation", { json: newReservation }).json<Reservation>();
+  } catch (error) {
+    if (error instanceof HTTPError && error.response.status === 400) {
+      const body = await error.response.json<unknown>();
+      if (body && typeof body === "object" && "errors" in body) {
+        const messages = Object.values(body.errors as Record<string, string[]>).flat();
+        throw new BookingError(messages);
+      }
+      if (typeof body === "string") {
+        throw new BookingError([body]);
+      }
+    }
+    throw error;
+  }
 }
 
 const RoomSchema = z.object({
