@@ -47,6 +47,16 @@ namespace Repositories
             return reservation.ToDomain();
         }
 
+        public async Task<IEnumerable<Reservation>> GetRoomReservations(string roomNumber)
+        {
+            var reservations = await _db.QueryAsync<ReservationDb>("SELECT * FROM Reservations WHERE RoomNumber = @roomNumber", new { roomNumber });
+
+            if (reservations is null)
+                return [];
+
+            return reservations.Select(r => r.ToDomain());
+        }
+
         public async Task<Reservation> CreateReservation(Reservation newReservation)
         {
             const string query = """
