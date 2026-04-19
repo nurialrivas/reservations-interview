@@ -68,13 +68,23 @@ export function useGetRooms() {
 
 const ReservationListSchema = ReservationSchema.array();
 
+export function useGetUpcomingReservations(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: ["reservations", "upcoming"],
+    queryFn: async () => {
+      const raw = await ky.get("api/reservation/upcoming").json<unknown>();
+      return ReservationListSchema.parseAsync(raw);
+    },
+    enabled: options?.enabled,
+  });
+}
+
 export function useGetRoomReservations(roomNumber: string) {
   return useQuery({
     queryKey: ["reservations", roomNumber],
     queryFn: async () => {
       const raw = await ky.get(`api/reservation/room/${roomNumber}`).json<unknown>();
-      const list = Array.isArray(raw) ? raw : Object.values(raw as object);
-      return ReservationListSchema.parseAsync(list);
+      return ReservationListSchema.parseAsync(raw);
     },
     enabled: !!roomNumber,
   });

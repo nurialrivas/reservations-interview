@@ -1,7 +1,6 @@
 using System.Data;
 using api.Models.Validators;
 using api.Utils;
-using Controllers;
 using Dapper;
 using Db;
 using FluentValidation;
@@ -32,6 +31,27 @@ var builder = WebApplication.CreateBuilder(args);
         .AddFluentValidationAutoValidation()
         .AddValidatorsFromAssemblyContaining<ReservationValidator>();
 
+    Services.AddAuthentication("StaffCookies")
+        .AddCookie("StaffCookies", options =>
+        {
+            options.Cookie.Name = "access";
+            options.Cookie.HttpOnly = true;
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            options.Cookie.SameSite = SameSiteMode.Strict;
+            options.Cookie.IsEssential = true;
+            options.Events.OnRedirectToLogin = context =>
+            {
+                context.Response.StatusCode = 401;
+                return Task.CompletedTask;
+            };
+            options.Events.OnRedirectToAccessDenied = context =>
+            {
+                context.Response.StatusCode = 403;
+                return Task.CompletedTask;
+            };
+        });
+    Services.AddAuthorization();
+
     Services.AddCors();
     Services.AddEndpointsApiExplorer();
     Services.AddSwaggerGen();
@@ -55,6 +75,8 @@ var app = builder.Build();
 
     app.UsePathBase("/api")
         .UseCors(p => p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader())
+        .UseAuthentication()
+        .UseAuthorization()
         .UseMvc()
         .UseSwagger()
         .UseSwaggerUI();

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Models;
 using Models.Errors;
@@ -9,10 +10,12 @@ namespace Controllers
     public class ReservationController : Controller
     {
         private ReservationRepository _repo { get; set; }
+        private ILogger<ReservationController> Logger { get; set; }
 
-        public ReservationController(ReservationRepository reservationRepository)
+        public ReservationController(ReservationRepository reservationRepository, ILogger<ReservationController> logger)
         {
             _repo = reservationRepository;
+            Logger = logger;
         }
 
         [HttpGet, Produces("application/json"), Route("")]
@@ -45,6 +48,13 @@ namespace Controllers
             return Json(reservations);
         }
 
+        [HttpGet, Produces("application/json"), Route("upcoming"), Authorize]
+        public async Task<ActionResult<IEnumerable<Reservation>>> GetUpcomingReservations()
+        {
+            var reservations = await _repo.GetUpcomingReservations();
+            return Json(reservations);
+        }
+
         /// <summary>
         /// Create a new reservation, to generate the GUID ID on the server, send an Empty GUID (all 0s)
         /// </summary>
@@ -68,15 +78,12 @@ namespace Controllers
             }
             catch (ReservationConflictException ex)
             {
-                Console.WriteLine("A reservation conflict occurred when trying to book a reservation:");
-                Console.WriteLine(ex.ToString());
+                Logger.LogWarning(ex, "A reservation conflict occurred when trying to book a reservation");
                 return Conflict("Invalid reservation, dates collide with another booking");
             }
             catch (Exception ex)
             {
-                Console.WriteLine("An error occured when trying to book a reservation:");
-                Console.WriteLine(ex.ToString());
-
+                Logger.LogError(ex, "An error occured when trying to book a reservation");
                 return BadRequest("Invalid reservation");
             }
         }

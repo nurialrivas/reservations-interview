@@ -28,7 +28,7 @@ namespace Controllers
             try
             {
                 var registeredGuest = await _repo.CreateGuest(guest);
-                return Created($"/guest/{guest.Email}", registeredGuest);
+                return Created($"/guest/{registeredGuest.Email}", registeredGuest);
             }
             catch (Exception ex)
             {

@@ -49,6 +49,20 @@ namespace Repositories
             return reservations.Select(r => r.ToDomain());
         }
 
+        public async Task<IEnumerable<Reservation>> GetUpcomingReservations()
+        {
+            var today = DateTime.UtcNow.Date;
+            var query = """
+                SELECT * 
+                FROM Reservations 
+                WHERE Start >= @today
+                ORDER BY Start
+                """;
+            var reservations = await _db.QueryAsync<ReservationDb>(query, new {today});
+
+            return reservations.Select(r => r.ToDomain());
+        }
+
         public async Task<Reservation> CreateReservation(Reservation newReservation)
         {
             const string queryCheckOverlap = """

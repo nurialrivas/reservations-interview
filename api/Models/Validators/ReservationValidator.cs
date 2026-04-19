@@ -9,7 +9,7 @@ public class ReservationValidator : AbstractValidator<Reservation>
     {
         RuleFor(r => r.Start)
             .NotEmpty()
-            .GreaterThan(DateTime.UtcNow)
+            .GreaterThan(DateTime.UtcNow.Date)
                 .WithMessage("Time travels have not been discovered... yet");
 
         RuleFor(r => r.End)
@@ -22,7 +22,7 @@ public class ReservationValidator : AbstractValidator<Reservation>
         RuleFor(r => r.GuestEmail)
             .Cascade(CascadeMode.Stop)
             .EmailAddress()
-                .WithMessage("Email address is missing the domain")
+                .WithMessage("Invalid email address")
             .Matches(@"^[^@]+@[^@]+\.[^@]+$")
                 .WithMessage("The email domain is incomplete");
 
@@ -34,7 +34,7 @@ public class ReservationValidator : AbstractValidator<Reservation>
             .Must(r => r[..1] != "0")
                 .WithMessage("Rooms must be placed on the 1st floor or above")
             .Matches(@"^\d{3}$")
-                .WithMessage("Invalid room number. Plese enter a number between 101 and 999 avoiding 00s")
+                .WithMessage("Invalid room number. Please enter a number between 101 and 999 avoiding 00s")
             .Must(r => r[1..] != "00")
                 .WithMessage("Invalid door '00'");
     }
