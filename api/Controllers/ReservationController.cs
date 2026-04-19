@@ -16,7 +16,7 @@ namespace Controllers
         }
 
         [HttpGet, Produces("application/json"), Route("")]
-        public async Task<ActionResult<Reservation>> GetReservations()
+        public async Task<ActionResult<IEnumerable<Reservation>>> GetReservations()
         {
             var reservations = await _repo.GetReservations();
 
@@ -38,7 +38,7 @@ namespace Controllers
         }
 
         [HttpGet, Produces("application/json"), Route("room/{roomNumber}")]
-        public async Task<ActionResult<Reservation>> GetRoomReservations(string roomNumber)
+        public async Task<ActionResult<IEnumerable<Reservation>>> GetRoomReservations(string roomNumber)
         {
             var reservations = await _repo.GetRoomReservations(roomNumber);
 
@@ -63,12 +63,14 @@ namespace Controllers
 
             try
             {
-                var existingReservations = await _repo.GetRoomReservations(newBooking.RoomNumber);
-                if(existingReservations.Any(r => newBooking.Start >= r.Start && newBooking.Start < r.End || newBooking.End > r.Start && newBooking.End <= r.End))
-                    return BadRequest("The room is already booked for the provided time range");
-
                 var createdReservation = await _repo.CreateReservation(newBooking);
-                return Created($"/reservation/${createdReservation.Id}", createdReservation);
+                return Created($"/reservation/{createdReservation.Id}", createdReservation);
+            }
+            catch (ReservationConflictException ex)
+            {
+                Console.WriteLine("A reservation conflict occurred when trying to book a reservation:");
+                Console.WriteLine(ex.ToString());
+                return Conflict("Invalid reservation, dates collide with another booking");
             }
             catch (Exception ex)
             {

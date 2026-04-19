@@ -18,11 +18,6 @@ namespace Repositories
         {
             var reservations = await _db.QueryAsync<ReservationDb>("SELECT * FROM Reservations");
 
-            if (reservations == null)
-            {
-                return [];
-            }
-
             return reservations.Select(r => r.ToDomain());
         }
 
@@ -51,21 +46,47 @@ namespace Repositories
         {
             var reservations = await _db.QueryAsync<ReservationDb>("SELECT * FROM Reservations WHERE RoomNumber = @roomNumber", new { roomNumber });
 
-            if (reservations is null)
-                return [];
-
             return reservations.Select(r => r.ToDomain());
         }
 
         public async Task<Reservation> CreateReservation(Reservation newReservation)
         {
-            const string query = """
+            const string queryCheckOverlap = """
+                SELECT COUNT(*) FROM Reservations 
+                WHERE RoomNumber = @RoomNumber 
+                AND Start < @End 
+                AND End > @Start;
+                """;
+            const string queryInsert = """
                 INSERT INTO Reservations (Id, GuestEmail, RoomNumber, Start, End, CheckedIn, CheckedOut) 
                 VALUES (@Id, @GuestEmail, @RoomNumber, @Start, @End, @CheckedIn, @CheckedOut)
                 RETURNING *
                 """;
-            
-            return await _db.QuerySingleAsync<Reservation>(query, newReservation);
+
+            _db.Open();
+            using var transaction = _db.BeginTransaction();
+            try
+            {
+                var reservationDb = new ReservationDb(newReservation);
+
+                var overlapCount = await _db.QuerySingleAsync<int>(queryCheckOverlap, reservationDb, transaction);
+
+                if (overlapCount > 0)
+                {
+                    throw new ReservationConflictException($"Room {newReservation.RoomNumber} is already reserved for the specified time period");
+                }
+
+                var createdReservation = await _db.QuerySingleAsync<ReservationDb>(queryInsert, reservationDb, transaction);
+
+                transaction.Commit();
+
+                return createdReservation.ToDomain();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
         }
 
         public async Task<bool> DeleteReservation(Guid reservationId)

@@ -15,9 +15,9 @@ const RESPONSIVE_GRID_COLS: React.ComponentProps<typeof Grid>["columns"] = {
 export function ReservationPage() {
   const { isLoading, data: rooms } = useGetRooms();
   const [selectedRoomNumber, setSelectedRoomNumber] = useState("");
-  const { data: selectedRoomReservations } = useGetRoomReservations(selectedRoomNumber);
 
   const formattedRoomNumber = String(selectedRoomNumber).padStart(3, "0");
+  const { data: selectedRoomReservations } = useGetRoomReservations(selectedRoomNumber);
 
   const showSuccessToast = useShowSuccessToast("We have received your booking!");
   const showErrorToast = useShowErrorToast();

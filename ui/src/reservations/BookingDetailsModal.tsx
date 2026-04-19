@@ -5,9 +5,9 @@ import {
   FocusedInput,
   OnDatesChangeProps,
 } from "@datepicker-react/styled";
-import { Box, Button, Dialog, Separator, TextField } from "@radix-ui/themes";
+import { Box, Button, Dialog, Separator, Text, TextField } from "@radix-ui/themes";
 import { NewReservation, Reservation } from "./api";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import styled from "styled-components";
 
 interface BookingDetailsModalProps {
@@ -60,15 +60,15 @@ function BookingForm({ roomNumber, reservations, onSubmit }: BookingFormProps) {
   const [focusedInput, setFocusedInput] = useState<FocusedInput | null>(null);
   const showProcessingToast = useShowInfoToast("Processing booking...");
   const showNoInfoToast = useShowInfoToast("Missing email or dates.");
-  function isDateBlocked(date: Date) {
+  const isDateBlocked = useCallback((date: Date) => {
     const toDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
     const day = toDay(date);
     return (reservations ?? []).some(({ start: s, end: e }) => {
       const start = toDay(new Date(s));
       const end = toDay(new Date(e));
-      return day >= start && day <= end;
+      return day >= start && day < end;
     });
-  }
+  }, [reservations]);
 
   function handleSubmit(evt: React.MouseEvent<HTMLButtonElement>) {
     if (!email || !dateRange[0] || !dateRange[1]) {
