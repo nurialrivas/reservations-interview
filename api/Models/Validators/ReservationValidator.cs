@@ -9,7 +9,7 @@ public class ReservationValidator : AbstractValidator<Reservation>
     {
         RuleFor(r => r.Start)
             .NotEmpty()
-            .GreaterThan(DateTime.UtcNow.Date)
+            .GreaterThan(_ => DateTime.UtcNow.Date)
                 .WithMessage("Time travels have not been discovered... yet");
 
         RuleFor(r => r.End)

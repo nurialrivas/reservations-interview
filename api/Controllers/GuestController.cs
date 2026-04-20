@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Models;
+using Models.Errors;
 using Repositories;
 
 namespace Controllers
@@ -8,10 +9,12 @@ namespace Controllers
     public class GuestController : Controller
     {
         private GuestRepository _repo;
+        private ILogger<GuestController> Logger { get; set; }
 
-        public GuestController(GuestRepository guestRepository)
+        public GuestController(GuestRepository guestRepository, ILogger<GuestController> logger)
         {
             _repo = guestRepository;
+            Logger = logger;
         }
 
         [HttpGet, Produces("application/json"), Route("")]
@@ -32,8 +35,7 @@ namespace Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine("An error occured when trying to register a new guest:");
-                Console.WriteLine(ex.ToString());
+                Logger.LogError(ex, "An error occurred when trying to register a new guest");
 
                 return BadRequest("Invalid guest data");
             }

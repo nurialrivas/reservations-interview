@@ -83,7 +83,7 @@ namespace Controllers
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "An error occured when trying to book a reservation");
+                Logger.LogError(ex, "An error occurred when trying to book a reservation");
                 return BadRequest("Invalid reservation");
             }
         }

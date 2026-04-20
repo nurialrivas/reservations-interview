@@ -38,8 +38,14 @@ export async function bookRoom(booking: NewReservation): Promise<Reservation> {
   try {
     return await ky.post("api/reservation", { json: newReservation }).json<Reservation>();
   } catch (error) {
-    if (error instanceof HTTPError && error.response.status === 400) {
-      const body = await error.response.json<unknown>();
+    if (error instanceof HTTPError && (error.response.status === 400 || error.response.status === 409)) {
+      const text = await error.response.text();
+      let body: unknown;
+      try {
+        body = JSON.parse(text);
+      } catch {
+        throw new BookingError([text]);
+      }
       if (body && typeof body === "object" && "errors" in body) {
         const messages = Object.values(body.errors as Record<string, string[]>).flat();
         throw new BookingError(messages);
